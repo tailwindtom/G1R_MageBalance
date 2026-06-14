@@ -78,6 +78,23 @@ return {
     -- Applies to all trainers. (Mechanism: Janys27pl, PR #1.)
     CircleCost = { 10, 12, 15, 18, 20, 25 },   -- progressive, 100 LP total (cheap start, circle 6 stays a milestone)
 
+    -- ---- trader rune stock (chapter-gated) ------------------------------------
+    -- Make spell runes buyable from a trader, optionally from a given chapter on.
+    -- One readable block per entry:
+    --   rune    = the rune's item class name (no "Default__"), e.g. "ItAr_Rune_IceBolt".
+    --   trader  = a substring of the trader's unique name, e.g. "Cronos" matches
+    --             "NC_KDW_Cronos_604". Adds to every trader whose name contains it.
+    --   chapter = OPTIONAL the entry applies once the player has REACHED this chapter
+    --             (currentChapter >= chapter). 1 = from the start. Default 1.
+    --   amount  = OPTIONAL how many to stock. Default 1.
+    --   enabled = OPTIONAL false to skip this entry.
+    -- Idempotent: a rune is added only if the trader doesn't already stock it, so it
+    -- never duplicates and never fights the game's own per-chapter stock. Added to the
+    -- trader's LIVE stock on each load and re-checked on live chapter transitions.
+    TraderStock = {
+        -- { rune = "ItAr_Rune_IceBolt", trader = "Cronos", chapter = 1, amount = 1 },
+    },
+
     -- ---- diagnostics ----------------------------------------------------------
     Verbose    = true,   -- log each spell's class + base damage on first cast ([SPELL] lines)
     DebugSteps = false,  -- DEV: [DBG] breadcrumbs before risky calls (crash tracing)

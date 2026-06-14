@@ -21,6 +21,7 @@
 
 local config = require("config")
 local log = require("lib.log")
+local traderstock = require("lib.traderstock")
 
 -- ---- helpers ----------------------------------------------------------------
 local function valid(o)
@@ -299,6 +300,9 @@ local function apply_all()
         end
     end
     pending = pending + apply_circle_costs()
+    -- Trader stock (chapter-gated rune availability). Returns true once every
+    -- eligible entry is present; not-yet-reached chapters aren't counted pending.
+    if not traderstock.apply(config.TraderStock) then pending = pending + 1 end
     return pending == 0
 end
 
@@ -378,6 +382,13 @@ if config.Enabled ~= false then
         run_later(4000, function() pcall(function() on_game_thread(apply_all) end) end)
     end)
 
+    -- Live chapter transition (no level reload): re-apply so chapter-gated trader
+    -- stock appears the moment the player enters its chapter. BP_HandleChapterChanged
+    -- fires on GameStory when the chapter advances during play.
+    pcall(RegisterHook, "/Script/G1R.GameStory:BP_HandleChapterChanged", function()
+        run_later(2000, function() pcall(function() on_game_thread(apply_all) end) end)
+    end)
+
     -- Discovery hook: capture spell class names on cast (arg3 = projectile definition).
     pcall(RegisterHook, "/Script/G1R.GameplayAbilitySpellCommonProjectile:IsAccesible_Scriptable",
         function(self, a1, a2, a3) pcall(on_cast_capture, self, a1, a3) end)
@@ -393,6 +404,11 @@ end)
 pcall(RegisterConsoleCommandHandler, "mb_status", function(_, _, ar)
     on_game_thread(function() dump_status() end)
     if ar then pcall(function() ar:Log("[Mage Balance] status -> UE4SS.log") end) end
+    return true
+end)
+pcall(RegisterConsoleCommandHandler, "mb_traders", function(_, _, ar)
+    on_game_thread(function() traderstock.status(config.TraderStock) end)
+    if ar then pcall(function() ar:Log("[Mage Balance] traders -> UE4SS.log") end) end
     return true
 end)
 
@@ -624,4 +640,4 @@ pcall(RegisterConsoleCommandHandler, "mb_fields", function(a, b, ar)
     return true
 end)
 
-log.info("ready. Console: mb_apply, mb_status, mb_scanall, mb_spellcfg, mb_try <name>, mb_fields <name>. Cast -> [SPELL].")
+log.info("ready. Console: mb_apply, mb_status, mb_traders, mb_scanall, mb_spellcfg, mb_try <name>, mb_fields <name>. Cast -> [SPELL].")
