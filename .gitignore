@@ -6,6 +6,7 @@ UE4SS_ObjectDump.txt
 CXXHeaderDump/
 *.usmap
 *.hpp
+*.zip
 
 # Private store-listing / marketing draft (kept local, not public)
 NEXUS.md
