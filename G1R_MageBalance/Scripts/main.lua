@@ -222,6 +222,7 @@ local function read_levels_raw(cfg)
             local t = {}
             pcall(function() t.mana = e:get().CastManaCost end)
             pcall(function() t.cast = e:get().CastTime end)
+            pcall(function() t.sc = e:get().ManaCostSc end)   -- per-repeat/hold cost (Firebolt etc.)
             out[idx] = t
         end)
     end)
@@ -248,6 +249,15 @@ local function apply_spellcfg(spell, label)
             if spell.mana ~= nil then
                 local t = level_target(spell.mana, idx, van[idx] and van[idx].mana)
                 if type(t) == "number" then pcall(function() e:get().CastManaCost = t end) end
+                -- Repeatable spells (Firebolt, Ice Arrow, Pyrokinesis, Chain Lightning)
+                -- charge ManaCostSc for EVERY shot after the first. Without this, only
+                -- the first shot costs the new amount and repeats stay at vanilla. Only
+                -- touch it when the spell actually uses it (vanilla > 0).
+                local vsc = van[idx] and van[idx].sc
+                if type(vsc) == "number" and vsc > 0 then
+                    local tsc = level_target(spell.mana, idx, vsc)
+                    if type(tsc) == "number" then pcall(function() e:get().ManaCostSc = tsc end) end
+                end
             end
             if spell.cast ~= nil then
                 local t = level_target(spell.cast, idx, van[idx] and van[idx].cast)

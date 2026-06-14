@@ -2,6 +2,16 @@
 
 All notable changes to **G1R Mage Balance** are documented here.
 
+## [0.7.6] — 2026-06-14
+
+### Fixed
+- **Firebolt mana only applied to the first shot.** Repeatable spells have two mana fields:
+  `CastManaCost` (first cast) and `ManaCostSc` (every shot after). The mod only set the
+  first, so Firebolt's repeats stayed at the vanilla 1 mana — making the intended 2-mana
+  cost meaningless for spamming. `mana` now sets **both** fields (only for spells that
+  actually use the repeat cost: Firebolt, Ice Arrow, Pyrokinesis, Chain Lightning), so
+  every shot costs the configured amount.
+
 ## [0.7.5] — 2026-06-14
 
 ### Fixed
