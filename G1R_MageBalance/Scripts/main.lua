@@ -312,6 +312,29 @@ local function apply_all()
     return pending == 0
 end
 
+-- Cheap "is it still applied?" guard for re-applies. CDO edits PERSIST, so re-running
+-- the full apply on every possession/streaming event (dismounting a mount, crossing a
+-- zone, …) is wasted work that hitches the frame. This reads back one already-changed
+-- spell: if its edit is still in place, we skip the whole expensive apply (the normal
+-- case → no hitch). Only if a value was actually reset to vanilla do we re-apply.
+local function reapply_if_reset()
+    local stillApplied = false
+    for _, spell in pairs(config.Spells or {}) do
+        if type(spell) == "table" and spell.class and spell.enabled ~= false then
+            local cdo = cdo_for(spell.class) or cdo_for(spell.class .. "_Lvl1")
+            if valid(cdo) then
+                local v = vanilla[full_name(cdo)]
+                local cur = read_damage(cdo)
+                if v and type(v.base) == "number" and type(cur) == "number" then
+                    if math.abs(cur - v.base) > 0.01 then stillApplied = true; break end
+                end
+            end
+        end
+    end
+    if stillApplied then return end   -- our edits persisted → nothing to do, no frame hitch
+    apply_all()                       -- a reset was detected (rare) → re-apply
+end
+
 -- =============================================================================
 -- Status dump (read-only): current base/circle damage of configured spells
 -- =============================================================================
@@ -400,8 +423,8 @@ if config.Enabled ~= false then
         if reapply_busy then return end
         reapply_busy = true
         run_later(4000, function()
-            pcall(function() on_game_thread(apply_all) end)
-            run_later(60000, function() reapply_busy = false end)   -- 60s cooldown before another re-apply can be queued
+            pcall(function() on_game_thread(reapply_if_reset) end)   -- cheap guard: skips the work unless a value was actually reset (no frame hitch on dismount/zone-cross)
+            run_later(60000, function() reapply_busy = false end)    -- 60s cooldown before another re-apply can be queued
         end)
     end)
 

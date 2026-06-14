@@ -2,6 +2,16 @@
 
 All notable changes to **G1R Mage Balance** are documented here.
 
+## [0.7.5] — 2026-06-14
+
+### Fixed
+- **Remaining hitch on dismount / zone transitions.** v0.7.4 silenced the re-apply log
+  spam, but the re-apply still did the full work (~100 object lookups + map writes) on
+  every possession/streaming event, causing a one-frame hitch (e.g. dismounting). Re-applies
+  now run a cheap "is it still applied?" check first and **skip the work entirely** when the
+  values are still in place — which is the normal case, since CDO edits persist. Verified:
+  7 streaming events in a session, **0** re-applies triggered.
+
 ## [0.7.4] — 2026-06-14
 
 ### Fixed
