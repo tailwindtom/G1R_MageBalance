@@ -17,8 +17,9 @@
 --
 -- IDEMPOTENT: an entry is added only if that rune isn't already in the trader's
 -- stock, so re-applying never duplicates and never fights the game's native stock.
--- Runtime-only; the trader's live stock is rebuilt each load, so main.lua re-runs
--- apply() on every load (ClientRestart) and on live chapter change.
+-- Runtime-only; the trader's live stock is rebuilt each load. The trade hook below
+-- re-checks stock whenever a trade starts, so runes are inserted lazily instead of
+-- during save-load startup.
 -- =============================================================================
 
 local log = require("lib.log")
@@ -142,6 +143,39 @@ function M.apply(entries)
         end
     end
     return allDone
+end
+
+-- ---- trade hook --------------------------------------------------------------
+-- AbilityTask_TradeWith is constructed when a trade opens. That gives us a cheap
+-- no-polling signal to add configured runes to the live TraderManager stock. The
+-- hook reads entries from a global slot so Ctrl+R/hot reload can update config
+-- without registering duplicate hooks.
+function M.install_trade_hook(entries)
+    _G.__MB_traderstock_entries = entries
+
+    if type(entries) ~= "table" or #entries == 0 then return true end
+    if _G.__MB_traderstock_hook_installed then return true end
+    if type(NotifyOnNewObject) ~= "function" then
+        log.warn("[trader] trade hook unavailable; use mb_trader_apply as fallback.")
+        return false
+    end
+
+    local ok = pcall(NotifyOnNewObject, "/Script/G1R.AbilityTask_TradeWith", function()
+        pcall(function()
+            local function run()
+                pcall(M.apply, _G.__MB_traderstock_entries)
+            end
+            if type(ExecuteInGameThread) == "function" then ExecuteInGameThread(run) else run() end
+        end)
+    end)
+
+    if ok then
+        _G.__MB_traderstock_hook_installed = true
+        log.info("[trader] trade hook installed.")
+    else
+        log.warn("[trader] trade hook install failed; use mb_trader_apply as fallback.")
+    end
+    return ok
 end
 
 -- ---- status (read-only) ------------------------------------------------------

@@ -90,8 +90,8 @@ return {
     --   amount  = OPTIONAL how many to stock. Default 1.
     --   enabled = OPTIONAL false to skip this entry.
     -- Idempotent: a rune is added only if the trader doesn't already stock it, so it
-    -- never duplicates and never fights the game's own per-chapter stock. Added to the
-    -- trader's LIVE stock on each load and re-checked on live chapter transitions.
+    -- never duplicates and never fights the game's own per-chapter stock. Added lazily
+    -- to the trader's LIVE stock when a trade starts, not during save-load startup.
     TraderStock = {
         -- { rune = "ItAr_Rune_IceBolt", trader = "Cronos", chapter = 1, amount = 1 },
     },

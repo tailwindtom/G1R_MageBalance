@@ -320,9 +320,6 @@ local function apply_all()
         end
     end
     pending = pending + apply_circle_costs()
-    -- Trader stock (chapter-gated rune availability). Returns true once every
-    -- eligible entry is present; not-yet-reached chapters aren't counted pending.
-    if not traderstock.apply(config.TraderStock) then pending = pending + 1 end
     return pending == 0
 end
 
@@ -442,9 +439,8 @@ if config.Enabled ~= false then
         end)
     end)
 
-    -- Live chapter transition (no level reload): re-apply so chapter-gated trader
-    -- stock appears the moment the player enters its chapter. BP_HandleChapterChanged
-    -- fires on GameStory when the chapter advances during play.
+    -- Live chapter transition (no level reload): re-assert spell/CDO values. Chapter-
+    -- gated trader stock is handled lazily by the trade hook on the next trade open.
     pcall(RegisterHook, "/Script/G1R.GameStory:BP_HandleChapterChanged", function()
         run_later(2000, function() pcall(function() on_game_thread(apply_all) end) end)
     end)
@@ -452,6 +448,10 @@ if config.Enabled ~= false then
     -- Discovery hook: capture spell class names on cast (arg3 = projectile definition).
     pcall(RegisterHook, "/Script/G1R.GameplayAbilitySpellCommonProjectile:IsAccesible_Scriptable",
         function(self, a1, a2, a3) pcall(on_cast_capture, self, a1, a3) end)
+
+    -- Trader rune stock is inserted lazily when a trade starts, not during save
+    -- load/startup. This avoids doing TraderManager writes in the CDO retry loop.
+    traderstock.install_trade_hook(config.TraderStock)
 
 end
 
@@ -469,6 +469,11 @@ end)
 pcall(RegisterConsoleCommandHandler, "mb_traders", function(_, _, ar)
     on_game_thread(function() traderstock.status(config.TraderStock) end)
     if ar then pcall(function() ar:Log("[Mage Balance] traders -> UE4SS.log") end) end
+    return true
+end)
+pcall(RegisterConsoleCommandHandler, "mb_trader_apply", function(_, _, ar)
+    on_game_thread(function() traderstock.apply(config.TraderStock) end)
+    if ar then pcall(function() ar:Log("[Mage Balance] trader apply -> UE4SS.log") end) end
     return true
 end)
 
@@ -700,4 +705,4 @@ pcall(RegisterConsoleCommandHandler, "mb_fields", function(a, b, ar)
     return true
 end)
 
-log.info("ready. Console: mb_apply, mb_status, mb_traders, mb_scanall, mb_spellcfg, mb_try <name>, mb_fields <name>. Cast -> [SPELL].")
+log.info("ready. Console: mb_apply, mb_status, mb_traders, mb_trader_apply, mb_scanall, mb_spellcfg, mb_try <name>, mb_fields <name>. Cast -> [SPELL].")
