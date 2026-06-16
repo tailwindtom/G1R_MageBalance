@@ -124,6 +124,12 @@ end
 local vanilla = _G.__MB_vanilla or {}
 _G.__MB_vanilla = vanilla
 
+-- After the first apply pass we go silent: re-applies (on level/chapter load, and
+-- on open-world streaming events) must NOT spam the log — logging every time caused
+-- hard frame stutter / freezes for players. CDO edits persist, so re-applies only
+-- re-assert the same values; there's nothing useful to log on them.
+local quiet = false
+
 local function cdo_for(defName)
     return StaticFindObject("/Script/Angelscript.Default__" .. defName)
 end
@@ -165,9 +171,11 @@ local function apply_def(cdo, name, damage, label)
         for i, cv in pairs(v.circles) do nc[i] = cv * factor end
     end
     write_damage(cdo, nb, v.baseKind, nc)
-    log.info(string.format("applied %-12s %-30s base %s->%s  c2/4/6 ->%s/%s/%s",
-        tostring(label or ""), name, tostring(v.base), tostring(nb),
-        tostring(nc[1]), tostring(nc[2]), tostring(nc[3])))
+    if not quiet then
+        log.info(string.format("applied %-12s %-30s base %s->%s  c2/4/6 ->%s/%s/%s",
+            tostring(label or ""), name, tostring(v.base), tostring(nb),
+            tostring(nc[1]), tostring(nc[2]), tostring(nc[3])))
+    end
 end
 
 -- Set plain numeric/bool fields directly on a CDO (absolute values, idempotent —
@@ -180,8 +188,8 @@ local function apply_fields(cdo, fields, name)
         ok = pcall(function() cdo[fieldName] = value end)
         local after; pcall(function() after = cdo[fieldName] end)
         if ok and after ~= nil then
-            log.info(string.format("  field %s.%s  %s -> %s", name, fieldName, tostring(before), tostring(after)))
-        else
+            if not quiet then log.info(string.format("  field %s.%s  %s -> %s", name, fieldName, tostring(before), tostring(after))) end
+        elseif not quiet then
             log.warn(string.format("  field %s.%s set FAILED (before=%s)", name, fieldName, tostring(before)))
         end
     end
@@ -215,6 +223,7 @@ local function read_levels_raw(cfg)
             local t = {}
             pcall(function() t.mana = e:get().CastManaCost end)
             pcall(function() t.cast = e:get().CastTime end)
+            pcall(function() t.sc = e:get().ManaCostSc end)   -- per-repeat/hold cost (Firebolt etc.)
             out[idx] = t
         end)
     end)
@@ -241,6 +250,15 @@ local function apply_spellcfg(spell, label)
             if spell.mana ~= nil then
                 local t = level_target(spell.mana, idx, van[idx] and van[idx].mana)
                 if type(t) == "number" then pcall(function() e:get().CastManaCost = t end) end
+                -- Repeatable spells (Firebolt, Ice Arrow, Pyrokinesis, Chain Lightning)
+                -- charge ManaCostSc for EVERY shot after the first. Without this, only
+                -- the first shot costs the new amount and repeats stay at vanilla. Only
+                -- touch it when the spell actually uses it (vanilla > 0).
+                local vsc = van[idx] and van[idx].sc
+                if type(vsc) == "number" and vsc > 0 then
+                    local tsc = level_target(spell.mana, idx, vsc)
+                    if type(tsc) == "number" then pcall(function() e:get().ManaCostSc = tsc end) end
+                end
             end
             if spell.cast ~= nil then
                 local t = level_target(spell.cast, idx, van[idx] and van[idx].cast)
@@ -248,9 +266,11 @@ local function apply_spellcfg(spell, label)
             end
         end)
     end)
-    log.info(string.format("applied %-12s %-30s mana=%s cast=%s", tostring(label or ""), cfgName,
-        type(spell.mana) == "table" and "abs" or tostring(spell.mana),
-        type(spell.cast) == "table" and "abs" or tostring(spell.cast)))
+    if not quiet then
+        log.info(string.format("applied %-12s %-30s mana=%s cast=%s", tostring(label or ""), cfgName,
+            type(spell.mana) == "table" and "abs" or tostring(spell.mana),
+            type(spell.cast) == "table" and "abs" or tostring(spell.cast)))
+    end
     return true
 end
 
@@ -273,7 +293,7 @@ local function apply_circle_costs()
             if valid(cdo) then
                 local before; pcall(function() before = cdo.SPCost end)
                 if pcall(function() cdo.SPCost = cost end) then
-                    log.info(string.format("circle %d SPCost %s -> %s", i, tostring(before), tostring(cost)))
+                    if not quiet then log.info(string.format("circle %d SPCost %s -> %s", i, tostring(before), tostring(cost))) end
                 end
             else
                 pending = pending + 1
@@ -304,6 +324,29 @@ local function apply_all()
     -- eligible entry is present; not-yet-reached chapters aren't counted pending.
     if not traderstock.apply(config.TraderStock) then pending = pending + 1 end
     return pending == 0
+end
+
+-- Cheap "is it still applied?" guard for re-applies. CDO edits PERSIST, so re-running
+-- the full apply on every possession/streaming event (dismounting a mount, crossing a
+-- zone, …) is wasted work that hitches the frame. This reads back one already-changed
+-- spell: if its edit is still in place, we skip the whole expensive apply (the normal
+-- case → no hitch). Only if a value was actually reset to vanilla do we re-apply.
+local function reapply_if_reset()
+    local stillApplied = false
+    for _, spell in pairs(config.Spells or {}) do
+        if type(spell) == "table" and spell.class and spell.enabled ~= false then
+            local cdo = cdo_for(spell.class) or cdo_for(spell.class .. "_Lvl1")
+            if valid(cdo) then
+                local v = vanilla[full_name(cdo)]
+                local cur = read_damage(cdo)
+                if v and type(v.base) == "number" and type(cur) == "number" then
+                    if math.abs(cur - v.base) > 0.01 then stillApplied = true; break end
+                end
+            end
+        end
+    end
+    if stillApplied then return end   -- our edits persisted → nothing to do, no frame hitch
+    apply_all()                       -- a reset was detected (rare) → re-apply
 end
 
 -- =============================================================================
@@ -356,30 +399,47 @@ print(string.format("[%s v%s] loaded\n", config.ModName, config.Version))
 
 if config.Enabled ~= false then
     -- Startup: retry applying until all configured spells' CDOs are loaded, then stop.
-    local done, attempts = false, 0
+    -- Use a shared global flag: apply_all runs on the game thread (a different
+    -- execution context than the LoopAsync callback), so a plain local "done" can
+    -- lag and the loop logs/stops late. A _G flag is visible everywhere; the guard
+    -- inside the deferred fn makes "stopped" log exactly once and stops cleanly.
+    _G.__MB_done = false
+    local attempts = 0
     if type(LoopAsync) == "function" then
         LoopAsync(2000, function()
-            if done then return true end
+            if _G.__MB_done then return true end
             attempts = attempts + 1
             pcall(function() on_game_thread(function()
-                if apply_all() then
-                    done = true
+                if _G.__MB_done then return end
+                local ok = apply_all()
+                quiet = true   -- only the first pass logs; every later apply is silent (anti-stutter)
+                if ok then
+                    _G.__MB_done = true
                     log.info("all configured spells applied; startup loop stopped.")
                 end
             end) end)
             if attempts >= 45 then           -- ~90s cap; spells you don't own may never load
-                if not done then log.info("startup loop stopped (cap); some spell CDOs not loaded yet — will retry on level load.") end
+                if not _G.__MB_done then log.info("startup loop stopped (cap); some spell CDOs not loaded yet — will retry on level load.") end
                 return true
             end
-            return done
+            return _G.__MB_done
         end)
     else
-        run_later(3000, function() on_game_thread(apply_all) end)
+        run_later(3000, function() on_game_thread(function() apply_all(); quiet = true end) end)
     end
 
-    -- Re-apply ~4s after each level / chapter load (in case CDOs get reloaded).
+    -- Re-apply after a level/chapter load — but DEBOUNCED. This hook fires repeatedly
+    -- during open-world streaming; re-running apply_all (and logging) every time caused
+    -- hard frame stutter / multi-second freezes. Collapse bursts to at most one SILENT
+    -- re-apply, then a long cooldown. CDO edits persist, so a missed re-apply is harmless.
+    local reapply_busy = false
     pcall(RegisterHook, "/Script/Engine.PlayerController:ClientRestart", function()
-        run_later(4000, function() pcall(function() on_game_thread(apply_all) end) end)
+        if reapply_busy then return end
+        reapply_busy = true
+        run_later(4000, function()
+            pcall(function() on_game_thread(reapply_if_reset) end)   -- cheap guard: skips the work unless a value was actually reset (no frame hitch on dismount/zone-cross)
+            run_later(60000, function() reapply_busy = false end)    -- 60s cooldown before another re-apply can be queued
+        end)
     end)
 
     -- Live chapter transition (no level reload): re-apply so chapter-gated trader

@@ -11,7 +11,7 @@ number otherwise.
 |:--:|---|---|---|---|---|
 | 1 | **Firebolt** | 35/40/50/65 → **30**/40/50/65 | 1 → **2** | `=` 0.1s | 🔽 1st-circle toned down + mana doubled (was by far the most efficient spell) |
 | 1 | **Ice Arrow** | 20/30/40/50 → **25/40/45/55** | `=` 1 | `=` 0.1s | 🔼 buffed but kept below Firebolt (freeze/utility) — `=` Firebolt at circle 2 for the Orc Cemetery |
-| 2 | **Fist of Wind** | 20/30/40/50 → **40/60/80/100** | `=` 2 | `=` instant | 🔼 ×2 damage (CC spell) |
+| 2 | **Fist of Wind** | 20/30/40/50 → **40/60/80/100** | `=` 2 | `=` instant | 🔼 ×2 dmg · ⚙️ super-armor 200 → **1000** = reliable knockdown (incl. orcs) |
 | 3 | **Fireball** *(charge)* | 60/90/120 → **105/158/210** | ×1.25 | **×0.7 (faster)** | 🔼 +75% dmg · ⚙️ faster charge · 🔽 +mana |
 | 3 | **Ball Lightning** *(charge)* | `=` 50/70/90/120 | ×1.25 | **×0.7 (faster)** | ⚙️ projectile speed 300-450 → **800** · faster charge · 🔽 +mana |
 | 3 | **Pyrokinesis** | 20 → **50** | `=` 5 | `=` 0.5s | 🔼 ×2.5 (dealt ~0 damage) |

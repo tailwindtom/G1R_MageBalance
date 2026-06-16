@@ -29,7 +29,7 @@
 
 return {
     ModName = "G1R Mage Balance",
-    Version = "0.7.2",
+    Version = "0.7.6",
     Enabled = true,
 
     Spells = {
@@ -53,10 +53,11 @@ return {
         Uriziel    = { class = "UrizielWaveOfDeathVisualDefinition", damage = { base = 250 }, -- 6th-circle finale (vanilla 90); tops the chart but not insta-win (was 300)
                        spellConfig = "UrizielWaveOfDeathSpellConfig", mana = { 40 } },   -- mana 40 (krass aber teuer)
         Blitz      = { class = "LightningRayDefinition",        damage = { base = 60, c2 = 90 } }, -- Chain Lightning C4 (vanilla 10/25 "lachhaft"); hits _Base/_WithParalysis/_WithoutParalysis. CONFIRMED: def-write scales in-game damage 1:1
-        Windfaust  = { class = "WindFistDefinition",            damage = 2.0 },           -- Fist of Wind: 20/30/40/50 -> 40/60/80/100 (CC spell, modest buff)
+        Windfaust  = { class = "WindFistDefinition",            damage = 2.0,             -- Fist of Wind (CC spell): 20/30/40/50 -> 40/60/80/100
+                       fields = { m_SuperArmorDamageBase = 1000 } },                      -- reliable knockdown incl. orcs (vanilla 200 was too low to stagger them); raise if some still resist, lower if it over-knocks late-game
         UntoteVernichten = { class = "DeathToTheUndeadDefinition", damage = { base = 999 }, -- Destroy Undead, Gothic-2-style (vanilla 500 flat)
                        spellConfig = "DeathToTheUndeadSpellConfig", mana = { 30 },       -- mana 25 -> 30
-                       cast = { 1.2 } },                                                 -- cast 0.5 -> 1.2: needs a setup, no more run-in-instakill (feedback)
+                       cast = { 2.0 } },                                                 -- cast 0.5 -> 2.0: needs a real setup/timing (no run-in-instakill); CastTime verified to drive the cast duration
 
         -- Mana nerfs (damage left VANILLA on purpose) — feedback: these two are far too cheap:
         Sturmfaust = { class = "StormFistDefinition",         damage = 1.0,

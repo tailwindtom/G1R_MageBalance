@@ -2,6 +2,45 @@
 
 All notable changes to **G1R Mage Balance** are documented here.
 
+## [0.7.6] — 2026-06-14
+
+### Fixed
+- **Firebolt mana only applied to the first shot.** Repeatable spells have two mana fields:
+  `CastManaCost` (first cast) and `ManaCostSc` (every shot after). The mod only set the
+  first, so Firebolt's repeats stayed at the vanilla 1 mana — making the intended 2-mana
+  cost meaningless for spamming. `mana` now sets **both** fields (only for spells that
+  actually use the repeat cost: Firebolt, Ice Arrow, Pyrokinesis, Chain Lightning), so
+  every shot costs the configured amount.
+
+## [0.7.5] — 2026-06-14
+
+### Fixed
+- **Remaining hitch on dismount / zone transitions.** v0.7.4 silenced the re-apply log
+  spam, but the re-apply still did the full work (~100 object lookups + map writes) on
+  every possession/streaming event, causing a one-frame hitch (e.g. dismounting). Re-applies
+  now run a cheap "is it still applied?" check first and **skip the work entirely** when the
+  values are still in place — which is the normal case, since CDO edits persist. Verified:
+  7 streaming events in a session, **0** re-applies triggered.
+
+## [0.7.4] — 2026-06-14
+
+### Fixed
+- **Stutter / freezes during open-world traversal (important).** The mod re-applied its
+  values on every PlayerController `ClientRestart`, which fires repeatedly during level
+  streaming (moving, sprinting, changing direction) — and it logged the full apply each
+  time, flooding `UE4SS.log` and hitching the frame. Re-applies are now **debounced** (at
+  most one per ~64s) and **silent after the first pass**. CDO edits persist, so this changes
+  nothing about the balance — it just stops the spam. Reported by **loki613** and **emt1234**.
+
+## [0.7.3] — 2026-06-14
+
+### Changed (balance)
+- **Fist of Wind — reliable knockdown.** Super-armor damage 200 → **1000**, so it now
+  staggers/knocks down even high-super-armor enemies like orcs. Fist of Wind's strength is
+  crowd control, not damage — this makes it a real survival tool (especially the fire-resistant
+  Orc Cemetery in chapter 2). Tell me if anything still resists it (I'll raise it) or if it
+  knocks down things it shouldn't late-game (I'll dial it back).
+
 ## [0.7.2] — 2026-06-14
 
 ### Changed (balance)
