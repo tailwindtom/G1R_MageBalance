@@ -147,9 +147,11 @@ end
 
 -- ---- trade hook --------------------------------------------------------------
 -- AbilityTask_TradeWith is constructed when a trade opens. That gives us a cheap
--- no-polling signal to add configured runes to the live TraderManager stock. The
--- hook reads entries from a global slot so Ctrl+R/hot reload can update config
--- without registering duplicate hooks.
+-- no-polling signal to add configured runes to the live TraderManager stock.
+-- Write immediately inside this construction callback; deferring through
+-- ExecuteInGameThread can run one tick too late, after the trade UI has copied the
+-- seller stock. The hook reads entries from a global slot so Ctrl+R/hot reload can
+-- update config without registering duplicate hooks.
 function M.install_trade_hook(entries)
     _G.__MB_traderstock_entries = entries
 
@@ -162,10 +164,7 @@ function M.install_trade_hook(entries)
 
     local ok = pcall(NotifyOnNewObject, "/Script/G1R.AbilityTask_TradeWith", function()
         pcall(function()
-            local function run()
-                pcall(M.apply, _G.__MB_traderstock_entries)
-            end
-            if type(ExecuteInGameThread) == "function" then ExecuteInGameThread(run) else run() end
+            pcall(M.apply, _G.__MB_traderstock_entries)
         end)
     end)
 
