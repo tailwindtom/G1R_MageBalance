@@ -4,8 +4,8 @@ Rebalances **mage spell damage** (and other spell stats) at runtime. **No game f
 modified** — values are changed in memory at load and revert when you close the game.
 Everything is configured in one readable table: **one block per spell**.
 
-> **Status: working (v0.8.0).** Tunes **damage, mana cost, cast/charge time and projectile
-> speed** per spell. See **[BALANCE.md](BALANCE.md)** for the complete vanilla → mod table.
+> **Status: working (v0.9.0).** Tunes **damage, mana cost, cast/charge time, projectile
+> speed** and **reliable freeze** per spell. See **[BALANCE.md](BALANCE.md)** for the complete vanilla → mod table.
 > Balances projectile spells (incl. chargeable ones like
 > Fireball) and AoE/special spells whose definition exposes a damage map — **Fire Rain and
 > Death Breath included**. A couple of spells use a different damage path (see
@@ -78,6 +78,7 @@ Each block:
 | `spellConfig` | *(optional)* the spell's `USpellConfig` class name (from `mb_spellcfg`) — required only to change mana/cast time (a separate object). |
 | `mana` | *(optional)* change cast mana cost. **number** = factor, **table** = absolute per spell level `{ [1]=, [2]=, … }`. Needs `spellConfig`. |
 | `cast` | *(optional)* change cast / charge time (same two forms as `mana`). For charge spells this is the per-stage charge time. Needs `spellConfig`. |
+| `freezeGE` + `reliableFreeze` | *(optional, ice spells)* **guaranteed freeze.** Vanilla ice damage adds a freeze *stack* that only freezes once it overflows, so a single cast often fails on tougher foes. Set `freezeGE` to the spell's ice damage GameplayEffect (Ice Block `"GE_IceBlock_Freeze_Damage"`, Ice Bolt `"GE_IceBolt_Damage"`, Ice Wave `"GE_IceWave_Freeze_Damage"`) and `reliableFreeze = true` to freeze on **every** hit. |
 | `enabled` | *(optional)* `false` to skip the spell. |
 
 Leave a spell vanilla with `damage = 1.0` and no `fields` (or comment the block out).
@@ -135,6 +136,7 @@ Require **ConsoleEnablerMod**.
 | `mb_apply` | re-apply the config now |
 | `mb_try <name>` | safely probe whether `Default__<name>…` definitions exist |
 | `mb_fields <name>` | list a definition's properties (to find tunable fields) |
+| `mb_freeze [set]` | dump each ice GE's freeze-overflow flag; `mb_freeze set` flips it live (reliable-freeze testing) |
 
 ## Limitations
 
@@ -142,7 +144,11 @@ Require **ConsoleEnablerMod**.
   AoE/breath spells (Fire Rain, Death Breath), the beam spell **Chain Lightning**, the
   **wind** spells (Fist of Wind), **Uriziel** and **Destroy Undead**. Use `mb_scanall`
   to list every known spell definition and its current values.
-- **Stun / knockback** (`m_SuperArmorDamageBase`) is readable but not tuned yet.
+- **Stun / knockback** (`m_SuperArmorDamageBase`) is tunable via `fields` (e.g. Fist of Wind).
+- **Reliable freeze** (`freezeGE` + `reliableFreeze`) works for the ice spells; the freeze
+  *duration* itself lives in a GameplayEffect and isn't tuned yet.
+- **Initial cast speed** can't be changed — the initial cast windup is montage/animation-driven
+  (no play-rate field). `cast` only affects per-stage charge time. (GitHub #9.)
 - **Per-trainer** magic-circle cost (e.g. a pricier Swamp Camp) isn't separated yet —
   `CircleCost` applies to every trainer. See the [to-do list](TODO.md).
 

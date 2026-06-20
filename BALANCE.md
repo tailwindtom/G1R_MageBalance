@@ -79,6 +79,7 @@ Everything else (Firebolt, Ice Arrow, Uriziel, Destroy Undead, Fist of Wind, and
 | Destroy Undead | cast 0.5 → **2.0** (needs a setup, no run-in-instakill) |
 | Fist of Wind | super-armor 200 → **1000** (reliable knockdown incl. orcs) |
 | Fire Rain | area 800/800 → **1600/1600** |
+| **Ice Block** | **reliable freeze** — freezes on every hit (vanilla needs several hits to overflow the freeze stack, so it often failed on tough foes) |
 | **Magic circles (LP)** | 10/15/20/25/30/35 (135) → **10/12/15/18/20/25 (100)** |
 
 ### Notes

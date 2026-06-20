@@ -306,6 +306,36 @@ local function apply_circle_costs()
     return pending
 end
 
+-- ---- reliable freeze (GitHub issue #7) --------------------------------------
+-- Ice damage applies a freeze STACK (UGE_IceStack); the target only freezes once
+-- that stack OVERFLOWS, so a single cast often fails to freeze tougher foes. Each
+-- ice damage GE (e.g. GE_IceBlock_Freeze_Damage : UGE_Ice_Damage : UGE_Damage)
+-- carries its freeze stacks in TArray<FElementalEffectStackData>
+-- m_ElementalEffectStacks / m_CommonElementalEffectStacks, each entry with a bool
+-- ForceOverflowElementalEffectStack. Setting it true makes EVERY hit overflow the
+-- stack instantly -> guaranteed freeze. Per spell: freezeGE = "<GE name>" +
+-- reliableFreeze = true. Idempotent (only ever sets true; vanilla false returns on
+-- game close). Crash-safe: only the bool is touched (never the TSubclassOf / tags),
+-- struct elements via e:get() (same path as the per-circle damage array).
+local function apply_reliable_freeze(spell, label)
+    if spell.reliableFreeze ~= true or not spell.freezeGE then return true end
+    local cdo = cdo_for(spell.freezeGE)
+    if not valid(cdo) then return false end
+    local n = 0
+    for _, arrName in ipairs({ "m_ElementalEffectStacks", "m_CommonElementalEffectStacks" }) do
+        local arr; pcall(function() arr = cdo[arrName] end)
+        if arr ~= nil then
+            pcall(function()
+                arr:ForEach(function(_, e)
+                    if pcall(function() e:get().ForceOverflowElementalEffectStack = true end) then n = n + 1 end
+                end)
+            end)
+        end
+    end
+    if not quiet then log.info(string.format("reliable freeze %-12s %-30s (%d stack entries)", tostring(label or ""), spell.freezeGE, n)) end
+    return true
+end
+
 -- Apply every spell block in config.Spells. Returns true once all spells that
 -- actually change something have been found (so the startup retry loop can stop).
 local function apply_all()
@@ -319,6 +349,9 @@ local function apply_all()
             end
             if spell.spellConfig and (spell.mana ~= nil or spell.cast ~= nil or spell.configFields ~= nil) then
                 if not apply_spellcfg(spell, niceName) then pending = pending + 1 end
+            end
+            if spell.reliableFreeze == true and spell.freezeGE then
+                if not apply_reliable_freeze(spell, niceName) then pending = pending + 1 end
             end
         end
     end
@@ -688,4 +721,63 @@ pcall(RegisterConsoleCommandHandler, "mb_fields", function(a, b, ar)
     return true
 end)
 
-log.info("ready. Console: mb_apply, mb_status, mb_scanall, mb_spellcfg, mb_try <name>, mb_fields <name>. Cast -> [SPELL].")
+-- =============================================================================
+-- mb_freeze [set] : Ice Block "reliable freeze" probe / lever (GitHub issue #7).
+-- In G1R, ice damage applies a FREEZE STACK (UGE_IceStack); the target only freezes
+-- once that stack OVERFLOWS — so a single Ice Block often fails to freeze tougher
+-- foes. Each ice damage GE (UGE_IceBlock_Freeze_Damage : UGE_Ice_Damage : UGE_Damage)
+-- carries its freeze stacks in TArray<FElementalEffectStackData> m_ElementalEffectStacks
+-- / m_CommonElementalEffectStacks, where each entry has a bool
+-- ForceOverflowElementalEffectStack. Setting that true makes EVERY hit overflow the
+-- stack instantly -> guaranteed freeze.
+--   mb_freeze       : dump the ForceOverflow flag for each ice GE's stacks (read-only)
+--   mb_freeze set   : set ForceOverflowElementalEffectStack = true on all of them
+-- Crash-safe: every access pcall'd; struct elements read via e:get() (same path as the
+-- per-circle damage array); we only touch the bool, never the TSubclassOf or any tag.
+-- =============================================================================
+local MB_FREEZE_GE = {
+    { "IceBlock", "GE_IceBlock_Freeze_Damage" },
+    { "IceWave",  "GE_IceWave_Freeze_Damage" },
+    { "IceBolt",  "GE_IceBolt_Damage" },
+    { "IceGren.", "GE_IceGrenade_Freeze_Damage" },
+}
+local function freeze_stacks_op(setFlag)
+    log.info(string.format("==== mb_freeze%s: ice-damage freeze-stack overflow ====", setFlag and " SET" or ""))
+    local found, total = 0, 0
+    for _, row in ipairs(MB_FREEZE_GE) do
+        local label, name = row[1], row[2]
+        local cdo = cdo_for(name)
+        if not valid(cdo) then
+            log.info(string.format("[FREEZE] %-9s %-30s (no CDO loaded)", label, name))
+        else
+            found = found + 1
+            for _, arrName in ipairs({ "m_ElementalEffectStacks", "m_CommonElementalEffectStacks" }) do
+                local arr; pcall(function() arr = cdo[arrName] end)
+                if arr ~= nil then
+                    pcall(function()
+                        arr:ForEach(function(idx, e)
+                            local cur; pcall(function() cur = e:get().ForceOverflowElementalEffectStack end)
+                            if cur ~= nil then total = total + 1 end
+                            if setFlag then pcall(function() e:get().ForceOverflowElementalEffectStack = true end) end
+                            local after; pcall(function() after = e:get().ForceOverflowElementalEffectStack end)
+                            log.info(string.format("[FREEZE] %-9s %s[%d].ForceOverflow = %s%s",
+                                label, arrName, idx, tostring(after),
+                                (setFlag and cur ~= after) and string.format("  (was %s)", tostring(cur)) or ""))
+                        end)
+                    end)
+                end
+            end
+        end
+    end
+    log.info(string.format("==== mb_freeze done: %d GE loaded, %d stack entries%s ====",
+        found, total, setFlag and " (set true)" or ""))
+end
+pcall(RegisterConsoleCommandHandler, "mb_freeze", function(a, b, ar)
+    local arg1 = console_args(a, b)[1]
+    local setFlag = (type(arg1) == "string" and arg1:lower() == "set")
+    on_game_thread(function() pcall(freeze_stacks_op, setFlag) end)
+    if ar then pcall(function() ar:Log("[Mage Balance] freeze" .. (setFlag and " set" or "") .. " -> UE4SS.log") end) end
+    return true
+end)
+
+log.info("ready. Console: mb_apply, mb_status, mb_scanall, mb_spellcfg, mb_try <name>, mb_fields <name>, mb_freeze [set]. Cast -> [SPELL].")

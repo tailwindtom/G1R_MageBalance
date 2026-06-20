@@ -25,6 +25,12 @@
 --   configFields = OPTIONAL absolute overrides for plain stats on the USpellConfig object
 --             (e.g. Ice Wave area `m_EmitterWidth`/`m_EmitterHeight`). Like `fields`, but
 --             written to the spellConfig, not the projectile definition. Needs spellConfig.
+--   freezeGE / reliableFreeze = OPTIONAL "guaranteed freeze" for ice spells. Vanilla
+--             ice damage adds a freeze STACK that only freezes once it OVERFLOWS, so a
+--             single cast often fails on tougher foes. Set freezeGE to the spell's ice
+--             damage GameplayEffect name and reliableFreeze = true to make EVERY hit
+--             freeze instantly. GE names: Ice Block "GE_IceBlock_Freeze_Damage",
+--             Ice Bolt "GE_IceBolt_Damage", Ice Wave "GE_IceWave_Freeze_Damage".
 --   enabled = OPTIONAL false to skip this spell entirely.
 --
 -- To leave a spell vanilla: damage = 1.0 and no fields (or just comment it out).
@@ -32,7 +38,7 @@
 
 return {
     ModName = "G1R Mage Balance",
-    Version = "0.8.0",
+    Version = "0.9.0",
     Enabled = true,
 
     Spells = {
@@ -68,8 +74,18 @@ return {
         Eiswelle   = { class = "IceWaveProjectileDefinition", damage = 1.0,
                        spellConfig = "IceWaveSpellConfig",    mana = { 20 } },            -- mana 8 -> 20 (AoE stunlock). NB: m_EmitterWidth/Height write fine but DON'T change the AoE (tested) — real Ice Wave radius lives elsewhere (GE/visual), not found yet
 
+        -- Ice Block: dedicated freeze utility (60/80/100, mana 3). Damage left vanilla;
+        -- the fix is GUARANTEED freeze (GitHub #7) — vanilla needs several hits to overflow
+        -- the freeze stack, so a single Ice Block often fails to freeze tougher foes.
+        Eisblock   = { class = "IceBlockProjectileDefinition", damage = 1.0,
+                       freezeGE = "GE_IceBlock_Freeze_Damage", reliableFreeze = true },   -- freeze on every hit, even orcs/trolls
+
+        -- Optional: reliable freeze on the OTHER ice spells too (off by default — these are
+        -- strong as instant freeze). Uncomment to enable:
+        -- Eispfeil add:  freezeGE = "GE_IceBolt_Damage",       reliableFreeze = true,   -- 1st-shot freeze (cheap spammable -> strong CC)
+        -- Eiswelle add:  freezeGE = "GE_IceWave_Freeze_Damage", reliableFreeze = true,   -- guaranteed AoE freeze (very strong)
+
         -- Left fully vanilla (uncomment + tune if wanted; values from mb_scanall / mb_spellcfg):
-        -- Eisblock   = { class = "IceBlockProjectileDefinition", damage = 1.0 },         -- 60/80 freeze utility, mana 3
         -- Damage absolute example:  Beispiel = { class = "X", damage = { base = 80, c2 = 95, c4 = 115, c6 = 150 } },
         -- Mana/cast example:        X = { class="X", spellConfig="XSpellConfig", mana = { 12 }, cast = 0.5 },
     },

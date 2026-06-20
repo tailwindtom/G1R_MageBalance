@@ -2,6 +2,28 @@
 
 All notable changes to **G1R Mage Balance** are documented here.
 
+## [0.9.0] — 2026-06-20
+
+### Added
+- **Reliable freeze for Ice Block** (fixes [#7](https://github.com/tailwindtom/G1R_MageBalance/issues/7)).
+  In vanilla, ice damage adds a freeze **stack** that only freezes the target once it
+  **overflows**, so a single Ice Block frequently fails to freeze tougher enemies (orcs, trolls,
+  …). Ice Block now freezes on **every** hit. Done via two new config keys —
+  `freezeGE = "<ice damage GameplayEffect>"` + `reliableFreeze = true` — which set
+  `ForceOverflowElementalEffectStack` on the spell's ice damage GE so each hit overflows the
+  freeze stack instantly. Verified in-game (Ice Bolt single-shot freeze, then Ice Block on tough
+  foes). Thanks **Janys27pl** for the report.
+- **`mb_freeze [set]`** console command — dumps each ice GE's `ForceOverflow` flag (read-only),
+  `mb_freeze set` flips it live for testing.
+
+### Notes
+- Optional reliable freeze on **Ice Bolt** (`GE_IceBolt_Damage`) and **Ice Wave**
+  (`GE_IceWave_Freeze_Damage`) is documented in `config.lua` but **off by default** — instant
+  freeze on a cheap spammable / on an AoE is strong; enable to taste.
+- **Issue [#9](https://github.com/tailwindtom/G1R_MageBalance/issues/9) (initial cast speed)** is
+  *not* fixable by value editing — the initial cast windup is montage/animation-driven (no cast
+  play-rate field on the spell config or ability). `cast` still controls per-stage charge time.
+
 ## [0.8.0] — 2026-06-20
 
 Re-baselined for the **2026-06-20 game patch**, which rebalanced several spells on the dev side
