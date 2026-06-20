@@ -22,6 +22,9 @@
 --   mana    = OPTIONAL change CAST MANA COST. NUMBER = factor on vanilla, or
 --             TABLE = absolute per spell level { [1]=, [2]=, ... }. Needs spellConfig.
 --   cast    = OPTIONAL change CAST TIME (same two forms as mana). Needs spellConfig.
+--   configFields = OPTIONAL absolute overrides for plain stats on the USpellConfig object
+--             (e.g. Ice Wave area `m_EmitterWidth`/`m_EmitterHeight`). Like `fields`, but
+--             written to the spellConfig, not the projectile definition. Needs spellConfig.
 --   enabled = OPTIONAL false to skip this spell entirely.
 --
 -- To leave a spell vanilla: damage = 1.0 and no fields (or just comment it out).
@@ -29,15 +32,15 @@
 
 return {
     ModName = "G1R Mage Balance",
-    Version = "0.7.6",
+    Version = "0.8.0",
     Enabled = true,
 
     Spells = {
         -- name           class (definition)                damage / fields
         Feuerpfeil = { class = "FireBoltProjectileDefinition", damage = { base = 30, c2 = 40, c4 = 50, c6 = 65 }, -- C1 nerf (35->30), rest vanilla
                        spellConfig = "ProjectileSpellConfig_FireBolt", mana = { 2 } },    -- mana 1 -> 2: halves its mana-efficiency (was by far the most efficient spell -> Firebolt-spam fix)
-        Feuerball  = { class = "FireBallProjectileDefinition", damage = 1.75,            -- chargeable _Lvl1/2/3; +75%
-                       spellConfig = "ProjectileSpellConfig_FireBall", cast = 0.7, mana = 1.25 }, -- charge x0.7, mana x1.25 (vanilla 5/2/2)
+        Feuerball  = { class = "FireBallProjectileDefinition", damage = 1.25,            -- chargeable _Lvl1/2/3; +25% (the 2026-06-20 patch already buffed the base 60->90, so x1.75 was overkill)
+                       spellConfig = "ProjectileSpellConfig_FireBall", cast = 0.7, mana = 1.25 }, -- charge x0.7, mana x1.25
         Kugelblitz = { class = "BallLightningDefinition",      damage = 1.0,             -- damage okay per feedback
                        fields = { m_Speed = 800 },                                       -- faster orb (vanilla 300-450, was sluggish)
                        spellConfig = "ProjectileSpellConfig_BallLightning", cast = 0.7, mana = 1.25 }, -- charge x0.7, mana x1.25 (strong now: faster + zippier)
@@ -52,7 +55,7 @@ return {
                        spellConfig = "StormOfFireSpellConfig", mana = { 30 } },          -- mana 35 -> 30 (slight relief)
         Uriziel    = { class = "UrizielWaveOfDeathVisualDefinition", damage = { base = 250 }, -- 6th-circle finale (vanilla 90); tops the chart but not insta-win (was 300)
                        spellConfig = "UrizielWaveOfDeathSpellConfig", mana = { 40 } },   -- mana 40 (krass aber teuer)
-        Blitz      = { class = "LightningRayDefinition",        damage = { base = 60, c2 = 90 } }, -- Chain Lightning C4 (vanilla 10/25 "lachhaft"); hits _Base/_WithParalysis/_WithoutParalysis. CONFIRMED: def-write scales in-game damage 1:1
+        Blitz      = { class = "LightningRayDefinition",        damage = 3.0 }, -- Chain Lightning C4. The 2026-06-20 patch buffed it 10/25 -> 20/35/45 (+c4), so we switched from absolute to x3 factor -> 60/105/135 (clean curve; old absolute would've left c4 at vanilla). Hits _Base/_WithParalysis/_WithoutParalysis
         Windfaust  = { class = "WindFistDefinition",            damage = 2.0,             -- Fist of Wind (CC spell): 20/30/40/50 -> 40/60/80/100
                        fields = { m_SuperArmorDamageBase = 1000 } },                      -- reliable knockdown incl. orcs (vanilla 200 was too low to stagger them); raise if some still resist, lower if it over-knocks late-game
         UntoteVernichten = { class = "DeathToTheUndeadDefinition", damage = { base = 999 }, -- Destroy Undead, Gothic-2-style (vanilla 500 flat)
@@ -63,7 +66,7 @@ return {
         Sturmfaust = { class = "StormFistDefinition",         damage = 1.0,
                        spellConfig = "StormFistSpellConfig",  mana = { 15 } },            -- mana 3 -> 15 (120/160 AoE + 250 stun for 3 mana was absurd)
         Eiswelle   = { class = "IceWaveProjectileDefinition", damage = 1.0,
-                       spellConfig = "IceWaveSpellConfig",    mana = { 20 } },            -- mana 8 -> 20 (AoE stunlock)
+                       spellConfig = "IceWaveSpellConfig",    mana = { 20 } },            -- mana 8 -> 20 (AoE stunlock). NB: m_EmitterWidth/Height write fine but DON'T change the AoE (tested) — real Ice Wave radius lives elsewhere (GE/visual), not found yet
 
         -- Left fully vanilla (uncomment + tune if wanted; values from mb_scanall / mb_spellcfg):
         -- Eisblock   = { class = "IceBlockProjectileDefinition", damage = 1.0 },         -- 60/80 freeze utility, mana 3

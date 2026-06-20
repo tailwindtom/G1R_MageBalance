@@ -4,7 +4,7 @@ Rebalances **mage spell damage** (and other spell stats) at runtime. **No game f
 modified** — values are changed in memory at load and revert when you close the game.
 Everything is configured in one readable table: **one block per spell**.
 
-> **Status: working (v0.6.0).** Tunes **damage, mana cost, cast/charge time and projectile
+> **Status: working (v0.8.0).** Tunes **damage, mana cost, cast/charge time and projectile
 > speed** per spell. See **[BALANCE.md](BALANCE.md)** for the complete vanilla → mod table.
 > Balances projectile spells (incl. chargeable ones like
 > Fireball) and AoE/special spells whose definition exposes a damage map — **Fire Rain and

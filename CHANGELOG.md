@@ -2,6 +2,30 @@
 
 All notable changes to **G1R Mage Balance** are documented here.
 
+## [0.8.0] — 2026-06-20
+
+Re-baselined for the **2026-06-20 game patch**, which rebalanced several spells on the dev side
+(Fireball/Ball Lightning/Chain Lightning/Fire Rain/Pyrokinesis buffed; Storm Fist/Ice Wave/Breath
+of Death mana raised; Storm of Fire mana lowered). Full three-way table (pre-patch vanilla →
+patch vanilla → mod) in [BALANCE.md](BALANCE.md).
+
+### Changed
+- **Fireball** factor `×1.75` → **`×1.25`** — the patch already buffed the base (60 → 90), so the
+  old factor stacked too high.
+- **Chain Lightning** switched from absolute `{ base=60, c2=90 }` to a **`×3` factor** — the patch
+  buffed it to 20/35/45 (and added a 4th-circle value), so a factor scales the new curve cleanly
+  (→ 60/105/135) instead of leaving a broken 4th-circle.
+
+### Added
+- **`configFields`** config key — write plain stats to a spell's `USpellConfig` object (not just the
+  projectile definition), e.g. area/duration fields.
+
+### Notes
+- Two mod mana values (Storm of Fire 30, Breath of Death 15) now coincide with the patch's new
+  numbers — the devs landed on the same values. Kept explicit so they stay pinned.
+- Folded in earlier unreleased tweaks: **Destroy Undead** cast 0.5 → **2.0** (needs a setup, no
+  more run-in-instakill).
+
 ## [0.7.6] — 2026-06-14
 
 ### Fixed

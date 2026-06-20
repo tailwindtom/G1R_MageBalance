@@ -238,7 +238,7 @@ local function level_target(spec, idx, vanillaVal)
 end
 local function apply_spellcfg(spell, label)
     local cfgName = spell.spellConfig
-    if not cfgName or (spell.mana == nil and spell.cast == nil) then return true end
+    if not cfgName or (spell.mana == nil and spell.cast == nil and spell.configFields == nil) then return true end
     local cdo = cdo_for(cfgName)
     if not valid(cdo) then return false end
     local key = full_name(cdo)
@@ -265,6 +265,10 @@ local function apply_spellcfg(spell, label)
             end
         end)
     end)
+    -- Plain scalar fields on the spell-config object (e.g. Ice Wave's m_EmitterWidth /
+    -- m_EmitterHeight area). Same as `fields`, but written to the USpellConfig instead of
+    -- the projectile definition.
+    if type(spell.configFields) == "table" then pcall(apply_fields, cdo, spell.configFields, cfgName) end
     if not quiet then
         log.info(string.format("applied %-12s %-30s mana=%s cast=%s", tostring(label or ""), cfgName,
             type(spell.mana) == "table" and "abs" or tostring(spell.mana),
@@ -313,7 +317,7 @@ local function apply_all()
                 local changes = (spell.damage ~= nil and spell.damage ~= 1.0) or spell.fields ~= nil
                 if not found and changes then pending = pending + 1 end
             end
-            if spell.spellConfig and (spell.mana ~= nil or spell.cast ~= nil) then
+            if spell.spellConfig and (spell.mana ~= nil or spell.cast ~= nil or spell.configFields ~= nil) then
                 if not apply_spellcfg(spell, niceName) then pending = pending + 1 end
             end
         end

@@ -1,61 +1,98 @@
 # Balance Sheet — G1R Mage Balance
 
-Every change the mod makes, vanilla → modded, at a glance. Values are applied at
-runtime (no game files touched). **Vanilla = patch 1.01.** Damage is shown as
-`base / 2nd / 4th / 6th circle` where a spell scales per circle, or a single flat
-number otherwise.
+Three baselines side by side:
+- **Vanilla (pre-patch)** — the values up to game patch 1.01.
+- **Vanilla (2026-06-20 patch)** — the devs rebalanced several spells in this patch (see below).
+- **Mod** — what this mod sets (on top of the current/patch vanilla).
 
-**Legend:** 🔼 buff · 🔽 nerf · ⚙️ utility/other · `=` unchanged
+Damage is `base / 2nd / 4th / 6th circle` where a spell scales, else a flat number. Charge
+spells (Fireball, Ball Lightning) show a factor since the value differs per charge level.
+AoE / DoT / channel spells hit multiple times or targets, so real output is above the single
+number. **Legend:** 🔼 buff · 🔽 nerf · `=` unchanged.
 
-| Circle | Spell | Damage (vanilla → mod) | Mana (v → mod) | Cast / Charge (v → mod) | What changed |
-|:--:|---|---|---|---|---|
-| 1 | **Firebolt** | 35/40/50/65 → **30**/40/50/65 | 1 → **2** | `=` 0.1s | 🔽 1st-circle toned down + mana doubled (was by far the most efficient spell) |
-| 1 | **Ice Arrow** | 20/30/40/50 → **25/40/45/55** | `=` 1 | `=` 0.1s | 🔼 buffed but kept below Firebolt (freeze/utility) — `=` Firebolt at circle 2 for the Orc Cemetery |
-| 2 | **Fist of Wind** | 20/30/40/50 → **40/60/80/100** | `=` 2 | `=` instant | 🔼 ×2 dmg · ⚙️ super-armor 200 → **1000** = reliable knockdown (incl. orcs) |
-| 3 | **Fireball** *(charge)* | 60/90/120 → **105/158/210** | ×1.25 | **×0.7 (faster)** | 🔼 +75% dmg · ⚙️ faster charge · 🔽 +mana |
-| 3 | **Ball Lightning** *(charge)* | `=` 50/70/90/120 | ×1.25 | **×0.7 (faster)** | ⚙️ projectile speed 300-450 → **800** · faster charge · 🔽 +mana |
-| 3 | **Pyrokinesis** | 20 → **50** | `=` 5 | `=` 0.5s | 🔼 ×2.5 (dealt ~0 damage) |
-| 3 | **Ice Block** | `=` 60/80 | `=` 3 | `=` 0.2s | `=` untouched |
-| 4 | **Storm of Fire** | 200/250 → **240/300** | 35 → **30** | `=` 0.5s | 🔼 +20% dmg · 🔽 slightly cheaper |
-| 4 | **Storm Fist** | `=` 120/160 | 3 → **15** | `=` 0.5s | 🔽 mana fixed (3 mana for an AoE + stun was absurd) |
-| 4 | **Chain Lightning** | 10/25 → **60/90** | `=` 5 | `=` 0.5s | 🔼 fixed — was laughably weak |
-| 5 | **Fire Rain** | 45 → **112.5** | 20 → **30** | `=` 0.1s | 🔼 ×2.5 dmg · ⚙️ bigger area (800 → 1600) · 🔽 +mana |
-| 5 | **Ice Wave** | `=` 120/150 | 8 → **20** | `=` 0.2s | 🔽 mana fixed (stunlock was too cheap) |
-| 5 | **Destroy Undead** | 500 → **999** | 25 → **30** | 0.5 → **1.2s** | 🔼 Gothic-2-style 999 · ⚙️ slower cast so it needs a setup (no run-in-instakill) |
-| 6 | **Uriziel** | 90 → **250** | `=` 40 | `=` 0.3s | 🔼 endgame finale, strongest spell (dialed back from 300) |
-| 6 | **Breath of Death** | 150 → **300** | 5 → **15** | 0.5 → **0.25s** | 🔼 ×2 dmg · ⚙️ cheap + fast cone nuke (own niche vs Fire Storm) |
+## What the 2026-06-20 patch changed (devs, not us)
+
+The devs' own rebalance — interestingly it overlaps a lot with this mod:
+
+| Spell | pre-patch | 2026-06-20 patch |
+|---|---|---|
+| Fireball (base, per lvl) | 60 / 90 / 120 | **90 / 110 / 130** (+ new 6th-circle values) 🔼 |
+| Ball Lightning (base, per lvl) | 50 / 70 / 90 / 120 | **70 / 90 / 110 / 150** (+ new 6th-circle) 🔼 |
+| Chain Lightning | 10 / 25 | **20 / 35 / 45** 🔼 (their "it's too weak" fix) |
+| Fire Rain | 45 | **50** 🔼 |
+| Pyrokinesis | 20 (flat) | **20 / 35** (added 2nd-circle) 🔼 |
+| Ice Block | 60 / 80 | **60 / 80 / 100** (added 4th-circle) 🔼 |
+| Storm Fist — mana | 3 | **10** 🔽 |
+| Ice Wave — mana | 8 | **15** 🔽 |
+| Breath of Death — mana | 5 | **15** 🔽 |
+| Storm of Fire — mana | 35 | **30** 🔽 |
+
+Everything else (Firebolt, Ice Arrow, Uriziel, Destroy Undead, Fist of Wind, and all those spells' damage) is unchanged by the patch.
+
+## Damage — vanilla (pre-patch) → vanilla (patch) → mod
+
+| C | Spell | pre-patch | patch | mod |
+|:--:|---|---|---|---|
+| 1 | Firebolt | 35/40/50/65 | `=` | **30**/40/50/65 |
+| 1 | Ice Arrow | 20/30/40/50 | `=` | **25/40/45/55** |
+| 2 | Fist of Wind | 20/30/40/50 | `=` | **40/60/80/100** (×2) |
+| 3 | Fireball *(charge, L1 base)* | 60 | 🔼 90 | **×1.25** → ~112 |
+| 3 | Ball Lightning *(charge, L1 base)* | 50 | 🔼 70 | **×1.0** (takes the patch buff) |
+| 3 | Pyrokinesis | 20 | 🔼 20/35 | **×2.5** → 50/87 |
+| 3 | Ice Block | 60/80 | 🔼 60/80/100 | `=` (untouched) |
+| 4 | Storm of Fire | 200/250 | `=` | **240/300** (×1.2) |
+| 4 | Storm Fist | 120/160 | `=` | `=` (mana-only change) |
+| 4 | Chain Lightning | 10/25 | 🔼 20/35/45 | **×3** → 60/105/135 |
+| 5 | Fire Rain | 45 | 🔼 50 | **×2.5** → 125 (+ bigger area) |
+| 5 | Ice Wave | 120/150 | `=` | `=` (mana-only change) |
+| 5 | Destroy Undead | 500 | `=` | **999** |
+| 6 | Uriziel | 90 | `=` | **250** |
+| 6 | Breath of Death | 150 | `=` | **300** (×2) |
+
+## Mana — vanilla (pre-patch) → vanilla (patch) → mod
+
+| Spell | pre-patch | patch | mod |
+|---|---|---|---|
+| Firebolt | 1 | `=` | **2** |
+| Ice Arrow | 1 | `=` | 1 |
+| Fist of Wind | 2 | `=` | 2 |
+| Fireball | 5/2/2 | `=` | **×1.25** |
+| Ball Lightning | 5/1/1/2 | `=` | **×1.25** |
+| Pyrokinesis | 5 | `=` | 5 |
+| Ice Block | 3 | `=` | 3 |
+| Storm of Fire | 35 | 🔽 30 | 30 *(= patch now)* |
+| Storm Fist | 3 | 🔽 10 | **15** |
+| Chain Lightning | 5 | `=` | 5 |
+| Fire Rain | 20 | `=` | **30** |
+| Ice Wave | 8 | 🔽 15 | **20** |
+| Destroy Undead | 25 | `=` | **30** |
+| Uriziel | 40 | `=` | 40 |
+| Breath of Death | 5 | 🔽 15 | 15 *(= patch now)* |
+
+## Cast / charge time, speed, other (mod)
+
+| Spell | change |
+|---|---|
+| Fireball | charge **×0.7** (faster) |
+| Ball Lightning | charge **×0.7** · projectile speed 300-450 → **800** |
+| Breath of Death | cast 0.5 → **0.25** (fast cone nuke) |
+| Destroy Undead | cast 0.5 → **2.0** (needs a setup, no run-in-instakill) |
+| Fist of Wind | super-armor 200 → **1000** (reliable knockdown incl. orcs) |
+| Fire Rain | area 800/800 → **1600/1600** |
+| **Magic circles (LP)** | 10/15/20/25/30/35 (135) → **10/12/15/18/20/25 (100)** |
 
 ### Notes
+- **Firebolt / Ice Arrow** stay the cheap early bread-and-butter; later spells win through area,
+  burst, range and crowd control.
+- Two mod mana values (Storm of Fire 30, Breath of Death 15) now **match the patch** — the devs
+  arrived at the same numbers. They're kept explicit so they stay pinned regardless of future patches.
+- Mana is tuned conservatively and may still change with feedback.
 
-- **Damage models differ — don't read the raw number as power.** AoE / damage-over-time /
-  channel / cone spells hit **multiple times and/or multiple targets**, so their real output
-  is far above the single number. *Fire Rain* (112.5 per tick) rains over a large area many
-  times → it is the strongest AoE despite the low per-hit number. *Storm of Fire*, *Ice Wave*,
-  *Storm Fist*, *Breath of Death* are AoE/cone; *Chain Lightning* and *Pyrokinesis* channel.
-- **Charge spells** (Fireball, Ball Lightning) list mana/charge as a multiplier because the
-  value differs per charge level. "×0.7 charge" = each charge stage fills ~30% faster.
-- **Firebolt / Ice Arrow are intentionally left cheap and efficient** — they're the bread-and-
-  butter early spells. Later spells win through area, burst, range and crowd control, not raw
-  mana-efficiency.
-- **Chapter progression goal:** newer-circle spells out-perform older ones, and the 6th-circle
-  finales (Uriziel, Breath of Death) top the chart — fixing vanilla's "Firebolt until the end".
-- Mana values are tuned conservatively and may still change with player feedback — a too-cheap
-  spell is easier to fix than a too-expensive one.
+*Everything here is one readable block per spell in
+[`Scripts/config.lua`](G1R_MageBalance/Scripts/config.lua). Use `mb_scanall` (damage/speed/stun)
+and `mb_spellcfg` (mana/cast) in-game to see live values — with the mod disabled they show the
+current vanilla, which is how the patch diff above was produced.*
 
-### Magic circle learning cost (LP)
+## License
 
-How many learning points a trainer charges to teach each circle.
-
-| Circle | 1 | 2 | 3 | 4 | 5 | 6 | **Total** |
-|---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| Vanilla | 10 | 15 | 20 | 25 | 30 | 35 | **135** |
-| **Mod** | **10** | **12** | **15** | **18** | **20** | **25** | **100** |
-
-Cheaper entry, circle 6 stays a real investment. Set `CircleCost` in config — a flat
-number, a per-circle table, or `nil` for vanilla. (Applies to all trainers.)
-
----
-
-*Want different numbers? Everything here is one readable block per spell in
-[`Scripts/config.lua`](G1R_MageBalance/Scripts/config.lua). Use the `mb_scanall` and
-`mb_spellcfg` console commands to see every spell's live values.*
+MIT — see [LICENSE](LICENSE).
